@@ -16,6 +16,7 @@ One row in my ML feature table = one game
 | [NFL Stadiums Database](https://www.worldplacesexplained.com/data/nfl-stadiums-database) | Stadium, team, city, capacity, surface | Downloaded to CSV 9/22 by selecting the "Download CSV" button |
 | [NFL Data API](https://nfldata.org/) | Date, temp, wind, stadium, roof type, teams, and scores | Free API |
 | [2026 NFL Attendance Data - Pro-Football-Reference.com](https://www.pro-football-reference.com/years/2026/attendance.htm) | 2026 NFL attendance | Downloaded to CSV 10/6 by clicking the "Share & Export" dropdown and selecting "Get table as CSV" |
+| [2025 Outcomes - Pro-Football-Reference.com](https://www.pro-football-reference.com/teeams/gnb/2025.htm) | Day, date and time, outcome of packers games | Downloaded to CSV 9/22 by clicking the "Share & Export" dropdown and selecting "Get table as CSV" Removed Bye weeek|
 
 ## How to Run
 1. Create and activate a virtual environment

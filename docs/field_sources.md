@@ -1,47 +1,38 @@
 # Field sources: Packers attendance project
 
-
 | Table | Field | Comes from | How | Used for |
 | :---- | :---- | :--------- | :-- | :------- |
-| dim_team | team_id | Created by Postgres | Auto-numbered with `GENERATED ALWAYS AS IDENTITY`. | Primary key; links games to home and away teams. |
-| dim_team | team_code | NFL Data API | Collect distinct abbreviations from `home_team` and `away_team`. | Unique lookup key for matching source games to teams. |
-| dim_team | team_name | Created | Maintain a checked abbreviation-to-full-name lookup, such as `GB` → Green Bay Packers and `ATL` → Atlanta Falcons. | Dashboard: readable team and opponent names; matches attendance team names to codes. |
-| dim_date | date_id | Created by Postgres | Auto-numbered with `GENERATED ALWAYS AS IDENTITY`. | Primary key; links games to their date records. |
-| dim_date | game_date | NFL Data API | Convert `gameday` to a date. | Dashboard: game date; orders past games for historical features. |
-| dim_date | season | NFL Data API | Copy `season`; use the supplied NFL season rather than the calendar year of the date. | Feature; time-based training/test splits; attendance matching. |
-| dim_date | week | NFL Data API | Convert `week` to an integer. | Feature; matches weekly attendance to the game. |
-| dim_date | day_of_week | Calculated in Python | Calculate `pd.to_datetime(gameday).dt.day_name()`. | Feature; dashboard: scheduling and staffing context. |
-| dim_stadium | stadium_id | Created by Postgres | Auto-numbered with `GENERATED ALWAYS AS IDENTITY`. | Primary key; links games to stadiums. |
-| dim_stadium | stadium_name | NFL Stadiums Database | Copy `name`; use an explicit alias lookup when other sources use different stadium names. | Dashboard: venue name; lookup for linking game venues. |
-| dim_stadium | city | NFL Stadiums Database | Copy `city`. | Dashboard: venue location. |
-| dim_stadium | state | NFL Stadiums Database | Copy `state`. | Dashboard: venue location. |
-| dim_stadium | capacity | NFL Stadiums Database | Convert `capacity` to an integer after removing any thousands separators. | Input to occupancy calculation: attendance ÷ capacity; dashboard capacity. |
-| dim_stadium | roof_type | NFL Stadiums Database | Copy `roof` as the stadium's general roof type. | Input to weather-related features; dashboard venue conditions. |
-| dim_stadium | surface | NFL Stadiums Database | Copy `surface`. | Dashboard: playing surface. |
-| fact_game | game_id | NFL Data API | Copy `game_id` as text. | Primary key; uniquely identifies each game and prevents duplicate game records. |
-| fact_game | date_id | Joined | Match API `gameday`, `season`, and `week` to `dim_date`; retrieve `date_id`. | Foreign key: links to `dim_date`. |
-| fact_game | home_team_id | Joined | Match API `home_team` to `dim_team.team_code`; retrieve `team_id`. | Foreign key: home team; filters Packers home games. |
-| fact_game | away_team_id | Joined | Match API `away_team` to `dim_team.team_code`; retrieve `team_id`. | Foreign key: away team; opponent feature and dashboard name. |
-| fact_game | stadium_id | Joined | Match API `stadium` to `dim_stadium.stadium_name` using checked aliases; retrieve `stadium_id`. | Foreign key: venue; links capacity and filters Lambeau Field games. |
-| fact_game | game_time | NFL Data API | Parse `gametime` as a time; document the source timezone and use it consistently. | Input to kickoff-hour feature; dashboard: kickoff time. |
-| fact_game | game_type | NFL Data API | Copy `game_type`. | Feature; distinguishes game types and restricts attendance matching to supported games. |
-| fact_game | home_score | NFL Data API | Convert `home_score` to an integer; preserve missing values for unplayed games. | Input to prior-game wins and team performance features. |
-| fact_game | away_score | NFL Data API | Convert `away_score` to an integer; preserve missing values for unplayed games. | Input to prior-game wins and opponent performance features. |
-| fact_game | overtime | NFL Data API | Convert `overtime` to a Boolean; preserve unknown values as NULL. | Dashboard: historical game results. |
-| fact_game | game_roof | NFL Data API | Copy `roof` for the particular game, separately from the stadium's general roof type. | Input to weather exposure features; dashboard game conditions. |
-| fact_game | temp | NFL Data API | Convert `temp` to numeric; retain the source units and document them before loading. Preserve missing readings as NULL. | Input to weather features; historical dashboard conditions. |
-| fact_game | wind | NFL Data API | Convert `wind` to numeric; retain the source units and document them before loading. Preserve missing readings as NULL. | Input to weather features; historical dashboard conditions. |
-| fact_game | spread_line | NFL Data API | Convert `spread_line` to numeric; preserve missing values. | Potential feature: expected competitiveness, using a line available before prediction. |
-| fact_game | total_line | NFL Data API | Convert `total_line` to numeric; preserve missing values. | Potential feature: expected combined scoring, using a line available before prediction. |
-| fact_game | div_game | NFL Data API | Convert `div_game` to a Boolean. | Feature: division matchup; dashboard rivalry context. |
-| fact_game | attendance | Pro-Football-Reference | Reshape `Week 1`–`Week 18` into week/attendance rows. Assign season from the source file, map `Tm` to the home team's code, and match by season, week, and home team for regular-season games. Check `Stadium` against the game venue. Convert attendance to integer; retain missing values as NULL. | Training/testing target: past attendance; dashboard: actual attendance and occupancy. |
+| dim_team | team_id | NFL Data API | Team abbreviation from `home_team` or `away_team`, such as GB or ATL | Key: links games to opponents |
+| dim_team | team_name | Pro-Football-Reference | `Opp` column in outcomes_2025 | Readable opponent name for the ML table and dashboard |
+| dim_date | date_id | Pro-Football-Reference | 	Game date, converted to a date type | Key: links each game to its date |
+| dim_date | season | Pro-Football-Reference or a rule | Jan and Feb games belong to the previous year's season | Feature; also splits data by time for modeling |
+| dim_date | day_of_week | Pro-Football-Reference | `Day` column in outcomes_2025| Feature |
+| dim_date | is_holiday | Calculated in Python | pandas U.S. federal holiday calendar | Feature |
+| dim_stadium | stadium_id | NFL Stadium Database | Use the stadium’s `slug`, such as `lambeau-field` | Key: links games to stadium information |
+| dim_stadium | stadium_name | NFL Stadium Database | Value in `name` | Readable stadium name for the dashboard |
+| dim_stadium | city | NFL Stadium Database | Value in `city` | Stadium location shown on the dashboard |
+| dim_stadium | state_code | NFL Stadium Database | Value in `state_code` | Stadium location shown on the dashboard |
+| dim_stadium | capacity | NFL Stadium Database | Numeric value in `capacity` | Feature; input for calculating capacity percentage |
+| dim_stadium | opened | NFL Stadium Database | Opening year in `opened` | Input for calculating stadium age |
+| fact_game | game_id | NFL Data API | Use the supplied `game_id` | Key: one unique ID per game |
+| fact_game | date_id | Pro-Football-Reference | Game date | Key: links to dim_date |
+| fact_game | home_team_id | NFL Data API | Value in `home_team` | Key: links to dim_team and identifies Packers home games |
+| fact_game | opponent_id | NFL Data API | Use `away_team` after filtering to Packers home games | Key: links the visiting opponent to dim_team |
+| fact_game | stadium_id | NFL Stadium Database | Stadium name | Key: links to dim_stadium |
+| fact_game | kickoff_time | Pro-Football-Reference outcomes |  `time` column | Feature representing kickoff time |
+| fact_game | week | NFL Data API | Value in `week` | Feature; also matches games to weekly attendance |
+| fact_game | game_type | NFL Data API | Value in `game_type`, such as REG or WC | Identifies regular-season and playoff games |
+| fact_game | home_score | Pro-Football-Reference outcomes | Value in `Tm`; this is the Packers’ score | 	Builds the win-percentage feature (next week) |
+| fact_game | opp_score | Pro-Football-Reference outcomes | Value in `Opp`; this is the Packers’ score | 	Builds the win-percentage feature (next week) |
+| fact_game | attendance | Pro-Football-Reference attendance | Weekly attendance table: Packers row, matched to each game by week | Training the model: past attendance it learns from and is tested against |
+| fact_game | roof | NFL Data API | Value in `roof` | Stadium condition; helps interpret missing weather values if enclosed |
+| fact_game | surface | NFL Data API | Value in `surface` | playing-surface feature |
+| fact_game | temp | NFL Data API | Numeric value in `temp` | Weather feature |
+| fact_game | wind | NFL Data API | Numeric value in `wind` | Weather feature |
 
-## Source fields used but not stored as separate columns
-
-| Source | Source field | Use without separate storage |
-| :----- | :----------- | :--------------------------- |
-| Pro-Football-Reference | `Tm` | Match the attendance row's team name to `dim_team.team_code` using the checked team lookup. |
-| Pro-Football-Reference | `Week 1`–`Week 18` column headings | Extract the week number when reshaping the attendance file; match it to `dim_date.week`. The cell value becomes `fact_game.attendance`. |
-
-The attendance file's season (2025 or 2026) comes from its filename/source year and is used to match games; it is represented by `dim_date.season`.
-
+Source fields used but not stored:
+- Tm — attendance: selects the Green Bay Packers row.
+- Week 1–Week 18 headings — attendance: supply the week number when reshaping the attendance data.
+- Bye — attendance: identifies weeks without a game; these entries are excluded.
+- Season supplies the season needed to match attendance to API games.
+- Date and opponent name — outcomes: match the kickoff-time record to the correct API game.
