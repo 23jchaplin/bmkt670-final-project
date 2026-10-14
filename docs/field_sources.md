@@ -8,12 +8,6 @@
 | dim_date | season | Pro-Football-Reference or a rule | Jan and Feb games belong to the previous year's season | Feature; also splits data by time for modeling |
 | dim_date | day_of_week | Pro-Football-Reference | `Day` column in outcomes_2025| Feature |
 | dim_date | is_holiday | Calculated in Python | pandas U.S. federal holiday calendar | Feature |
-| dim_stadium | stadium_id | NFL Stadium Database | Use the stadium’s `slug`, such as `lambeau-field` | Key: links games to stadium information |
-| dim_stadium | stadium_name | NFL Stadium Database | Value in `name` | Readable stadium name for the dashboard |
-| dim_stadium | city | NFL Stadium Database | Value in `city` | Stadium location shown on the dashboard |
-| dim_stadium | state_code | NFL Stadium Database | Value in `state_code` | Stadium location shown on the dashboard |
-| dim_stadium | capacity | NFL Stadium Database | Numeric value in `capacity` | Feature; input for calculating capacity percentage |
-| dim_stadium | opened | NFL Stadium Database | Opening year in `opened` | Input for calculating stadium age |
 | fact_game | game_id | NFL Data API | Use the supplied `game_id` | Key: one unique ID per game |
 | fact_game | date_id | Pro-Football-Reference | Game date | Key: links to dim_date |
 | fact_game | home_team_id | NFL Data API | Value in `home_team` | Key: links to dim_team and identifies Packers home games |
@@ -25,10 +19,12 @@
 | fact_game | home_score | Pro-Football-Reference outcomes | Value in `Tm`; this is the Packers’ score | 	Builds the win-percentage feature (next week) |
 | fact_game | opp_score | Pro-Football-Reference outcomes | Value in `ScoreOpp`; this is the Packers’ score | 	Builds the win-percentage feature (next week) |
 | fact_game | attendance | Pro-Football-Reference attendance | Weekly attendance table: Packers row, matched to each game by week | Training the model: past attendance it learns from and is tested against |
-| fact_game | roof | NFL Data API | Value in `roof` | Stadium condition; helps interpret missing weather values if enclosed |
-| fact_game | surface | NFL Data API | Value in `surface` | playing-surface feature |
-| fact_game | temp | NFL Data API | Numeric value in `temp` | Weather feature |
-| fact_game | wind | NFL Data API | Numeric value in `wind` | Weather feature |
+| fact_weather | weather_id | created by postgres | Autonumbered | Key: primary key |
+| fact_weather | game_id | matched in pyhton | The weather hour closest to kickoff | Key: links to fact_game |
+| fact_weather | temp | NFL Data API | Numeric value in `temp` | Weather feature |
+| fact_weather | wind | NFL Data API | Numeric value in `wind` | Weather feature |
+| fact_weather | percip_mm | Meteostat Python Library | Numeric value in `prcp` | Weather feature |
+| fact_weather | relative_humidity | Meteostat Python Library | Numeric value in `rhum` | Weather feature |
 
 Source fields used but not stored:
 - Tm — attendance: selects the Green Bay Packers row.

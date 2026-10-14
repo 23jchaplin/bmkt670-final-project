@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS fact_game CASCADE;
-DROP TABLE IF EXISTS dim_stadium CASCADE;
+DROP TABLE IF EXISTS fact_weather CASCADE;
 DROP TABLE IF EXISTS dim_date CASCADE;
 DROP TABLE IF EXISTS dim_team CASCADE;
 
@@ -17,14 +17,14 @@ CREATE TABLE dim_date (
     is_holiday BOOLEAN NOT NULL
 );
 
--- One row represents one NFL stadium.
-CREATE TABLE dim_stadium (
-    stadium_id TEXT PRIMARY KEY,
-    stadium_name TEXT NOT NULL,
-    city TEXT,
-    state_code TEXT,
-    capacity INTEGER CHECK (capacity > 0),
-    opened INTEGER
+-- One row represents the weather selected for one game's kickoff.
+CREATE TABLE fact_weather (
+    weather_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    game_id TEXT NOT NULL UNIQUE REFERENCES fact_game (game_id),
+    temp NUMERIC,
+    wind NUMERIC CHECK (wind >= 0),
+    percip_mm NUMERIC CHECK (percip_mm >= 0),
+    relative_humidity NUMERIC CHECK (relative_humidity BETWEEN 0 AND 100)
 );
 
 -- One row represents one Green Bay Packers home game.
@@ -41,9 +41,5 @@ CREATE TABLE fact_game (
     home_score INTEGER CHECK (home_score >= 0),
     opp_score INTEGER CHECK (opp_score >= 0),
     attendance INTEGER CHECK (attendance >= 0),
-    roof TEXT,
-    surface TEXT,
-    temp NUMERIC,
-    wind NUMERIC CHECK (wind >= 0),
     CHECK (home_team_id <> opponent_id)
 );
