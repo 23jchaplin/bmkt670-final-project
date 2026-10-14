@@ -23,7 +23,7 @@
 | fact_game | week | NFL Data API | Value in `week` | Feature; also matches games to weekly attendance |
 | fact_game | game_type | NFL Data API | Value in `game_type`, such as REG or WC | Identifies regular-season and playoff games |
 | fact_game | home_score | Pro-Football-Reference outcomes | Value in `Tm`; this is the Packers’ score | 	Builds the win-percentage feature (next week) |
-| fact_game | opp_score | Pro-Football-Reference outcomes | Value in `Opp`; this is the Packers’ score | 	Builds the win-percentage feature (next week) |
+| fact_game | opp_score | Pro-Football-Reference outcomes | Value in `ScoreOpp`; this is the Packers’ score | 	Builds the win-percentage feature (next week) |
 | fact_game | attendance | Pro-Football-Reference attendance | Weekly attendance table: Packers row, matched to each game by week | Training the model: past attendance it learns from and is tested against |
 | fact_game | roof | NFL Data API | Value in `roof` | Stadium condition; helps interpret missing weather values if enclosed |
 | fact_game | surface | NFL Data API | Value in `surface` | playing-surface feature |
