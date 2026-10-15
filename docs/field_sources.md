@@ -12,7 +12,6 @@
 | fact_game | date_id | Pro-Football-Reference | Game date | Key: links to dim_date |
 | fact_game | home_team_id | NFL Data API | Value in `home_team` | Key: links to dim_team and identifies Packers home games |
 | fact_game | opponent_id | NFL Data API | Use `away_team` after filtering to Packers home games | Key: links the visiting opponent to dim_team |
-| fact_game | stadium_id | NFL Stadium Database | Stadium name | Key: links to dim_stadium |
 | fact_game | kickoff_time | Pro-Football-Reference outcomes |  `time` column | Feature representing kickoff time |
 | fact_game | week | NFL Data API | Value in `week` | Feature; also matches games to weekly attendance |
 | fact_game | game_type | NFL Data API | Value in `game_type`, such as REG or WC | Identifies regular-season and playoff games |
