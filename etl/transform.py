@@ -32,8 +32,6 @@ games = read_yearly_files(RAW_DIR, "games_*.csv")
 # Dropping unwanted columns from games
 games = games.drop(columns=['gametime', 'total_line', 'div_game', 'spread_line', 'boxscore_url', 'roof', 'stadium', 'surface'])
 
-
-
 attendance = read_yearly_files(MANUAL_DIR, "attendance_*.csv")
 attendance = attendance.loc[attendance["Tm"].notna()].copy()
 
@@ -98,19 +96,10 @@ kickoff_text = outcomes["date_id"].dt.strftime("%Y-%m-%d") + " " + clock
 kickoff_local = pd.to_datetime(kickoff_text, format="%Y-%m-%d %I:%M%p", errors="raise")
 outcomes["kickoff_utc"] = kickoff_local.dt.tz_localize("America/New_York").dt.tz_convert("UTC")
 weather["weather_hour_utc"] = pd.to_datetime(weather["time"], format="mixed", utc=True, errors="raise")
-if weather["weather_hour_utc"].isna().any() or weather["weather_hour_utc"].duplicated().any():
-    raise ValueError("Weather timestamps must be present and unique.")
-if weather["weather_hour_utc"].ne(weather["weather_hour_utc"].dt.floor("h")).any():
-    raise ValueError("Expected weather readings exactly on the hour.")
-print(games.head())
-print(outcomes.head())
-print(attendance.head())
-print(weather.head())
+
 
 # Transform attendance data from wide to long format.
 week_columns = attendance.columns[attendance.columns.str.fullmatch(r"Week\s+\d+")].tolist()
-if not week_columns:
-    raise ValueError("No weekly attendance columns were found.")
 attendance_long = attendance.melt(
     id_vars=["season", "team_id"], value_vars=week_columns, var_name="week", value_name="attendance"
 )

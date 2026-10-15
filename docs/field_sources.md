@@ -37,7 +37,6 @@
 | ml_feature | day_thursday | Calculated in Python | Encode joined dim_date.day_of_week as 1 for thursday, otherwise 0. Sunday is the all-zero reference category. | Encoded categorical weekday feature. |
 | ml_feature | day_friday | Calculated in Python | Encode joined dim_date.day_of_week as 1 for friday, otherwise 0. Sunday is the all-zero reference category. | Encoded categorical weekday feature. |
 | ml_feature | day_saturday | Calculated in Python | Encode joined dim_date.day_of_week as 1 for saturday, otherwise 0. Sunday is the all-zero reference category. | Encoded categorical weekday feature. |
-| ml_feature | prior_3_home_avg_attendance | Calculated in Python | Sort selected home games by date; attendance.shift(1).rolling(3, min_periods=1).mean(). Average known values in the previous three games, across seasons; NULL if none are known. | Derived feature; recent home attendance available before kickoff. |
 | ml_feature | days_since_last_home_game | Calculated in Python | Day of current game - day of last game | numeric feature |
 | ml_feature | win_pct_before_game | Calculated in Python | takes number of wins before game divided by number of total cames | numeric feature |
 | ml_feature | split | Calculated in Python | Season 2021-2023 = train; 2024 = validate; 2025 = test. Use NFL season, including January/February postseason games. | Time-based partition label, excluded from model inputs. |
