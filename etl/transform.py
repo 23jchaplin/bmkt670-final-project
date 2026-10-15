@@ -45,8 +45,6 @@ outcomes = outcomes.drop(columns=[ 'Rec', '1stD', 'TotYd', 'PassY', 'RushY', 'TO
 weather = pd.read_csv(RAW_DIR / "weather_hourly_raw.csv")
 weather = weather.drop(columns=['tsun', 'cldc', 'coco', 'snwd', 'wdir', 'wpgt'])
 
-weather.to_csv(CLEAN_DIR / "weather_hourly_raw.csv", index=False)
-
 # Align team names, dates, and timestamps; reshape weekly attendance.
 TEAM_NAMES = {
     "ARI": "Arizona Cardinals", "ATL": "Atlanta Falcons", "BAL": "Baltimore Ravens",
@@ -90,7 +88,7 @@ outcomes["date_id"] = pd.to_datetime(outcomes["Date"], format="mixed", errors="r
 if games["date_id"].isna().any() or outcomes["date_id"].isna().any():
     raise ValueError("Game and outcome dates cannot be missing.")
 
-# Keep the ET label; use timezone-aware UTC timestamps for weather matching.
+# Use the source ET label only to calculate a timezone-aware UTC timestamp.
 outcomes["kickoff_time"] = outcomes["time"].astype("string").str.strip()
 clock = outcomes["kickoff_time"].str.upper().str.extract(r"^\s*(\d{1,2}:\d{2}\s*[AP]M)\s+ET\s*$", expand=False)
 if clock.isna().any():
@@ -153,7 +151,7 @@ print(f"Kept {int(is_home.sum())} and excluded {int(is_away.sum())} Packers away
 #Filter out all games that are not Packers home games.
 games = games[games["home_team_id"] == "GB"]
 home_games = games.loc[is_home].copy()
-outcome_columns = ["season", "date_id", "opponent_id", "Day", "kickoff_time", "kickoff_utc", "win_pct_before_game"]
+outcome_columns = ["season", "date_id", "opponent_id", "Day", "kickoff_utc", "win_pct_before_game"]
 home_games = home_games.merge(
     outcomes[outcome_columns], on=["season", "date_id", "opponent_id"], how="left",
     validate="one_to_one", indicator=True
@@ -176,7 +174,8 @@ holidays = USFederalHolidayCalendar().holidays(start=dim_date["date_id"].min(), 
 dim_date["is_holiday"] = dim_date["date_id"].isin(holidays)
 
 
-fact_game = home_games.rename(columns={"away_score": "opp_score"})
+fact_game = home_games.rename(columns={"away_score": "opp_score"}).copy()
+fact_game["kickoff_time"] = fact_game["kickoff_utc"]
 fact_game = fact_game[
     ["game_id", "date_id", "home_team_id", "opponent_id", "kickoff_time", "week", "game_type",
      "home_score", "opp_score", "attendance"]
@@ -188,7 +187,9 @@ weather_games = weather_games.merge(
     validate="many_to_one", indicator=True
 )
 missing_weather = int(weather_games["_merge"].eq("left_only").sum())
-fact_weather = weather_games.rename(columns={"prcp": "percip_mm", "rhum": "relative_humidity", "temp": "temp_c", "wspd": "wind_speed_kmh"})
+fact_weather = weather_games.rename(
+    columns={"prcp": "percip_mm", "rhum": "relative_humidity", "temp": "temp_c", "wspd": "wind_speed_kmh"}
+)
 fact_weather = fact_weather[["game_id", "temp_c", "wind_speed_kmh", "percip_mm", "relative_humidity"]].copy()
 
 # Check nulls, schema rules, and foreign keys BEFORE writing any clean CSV.
