@@ -20,8 +20,8 @@
 | fact_game | attendance | Pro-Football-Reference attendance | Weekly attendance table: Packers row, matched to each game by week | Training the model: past attendance it learns from and is tested against |
 | fact_weather | weather_id | created by postgres | Autonumbered | Key: primary key |
 | fact_weather | game_id | matched in pyhton | The weather hour closest to kickoff | Key: links to fact_game |
-| fact_weather | temp | NFL Data API | Numeric value in `temp` | Weather feature |
-| fact_weather | wind | NFL Data API | Numeric value in `wind` | Weather feature |
+| fact_weather | temp_c | Meteostat Python Library | Numeric value in `temp` | Weather feature |
+| fact_weather | wind_speed_kmh | Meteostat Python Library | Numeric value in `wspd` | Weather feature |
 | fact_weather | percip_mm | Meteostat Python Library | Numeric value in `prcp` | Weather feature |
 | fact_weather | relative_humidity | Meteostat Python Library | Numeric value in `rhum` | Weather feature |
 
