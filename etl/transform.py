@@ -181,24 +181,53 @@ fact_weather = weather_games.rename(
 )
 fact_weather = fact_weather[["game_id", "temp_c", "wind_speed_kmh", "percip_mm", "relative_humidity"]].copy()
 
-# Check nulls, schema rules, and foreign keys BEFORE writing any clean CSV.
-for column in ["week", "home_score", "opp_score", "attendance"]:
-    fact_game[column] = pd.to_numeric(fact_game[column], errors="raise").astype("Int64")
-for column in ["temp_c", "wind_speed_kmh", "percip_mm", "relative_humidity"]:
-    fact_weather[column] = pd.to_numeric(fact_weather[column], errors="raise")
+# Create the ML table from the combined home-game data
+ml_feature = home_games.copy()
+ml_feature["date_id"] = pd.to_datetime(ml_feature["date_id"])
+ml_feature = ml_feature.sort_values("date_id").reset_index(drop=True)
+ml_feature["is_holiday"] = dim_date["date_id"].isin(holidays)
+
+# Calculate days since the previous home game, including across seasons
+ml_feature["days_since_last_home_game"] = ml_feature["date_id"].diff().dt.days.astype("Int64")
+
+# Encode weekdays; Sunday is the reference category and has all six columns set to 0
+day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+
+for day_number, day_name in enumerate(day_names):
+    ml_feature[f"day_{day_name}"] = (ml_feature["date_id"].dt.dayofweek == day_number).astype(int)
+
+# Assign training, validation, and test seasons
+season_splits = {2021: "train", 2022: "train", 2023: "train", 2024: "validate", 2025: "test"}
+ml_feature["split"] = ml_feature["season"].map(season_splits)
+
+# Flag whether the game is a postseason game
+ml_feature["is_postseason"] = (ml_feature["game_type"] != "REG").astype(int)
+
+# Select columns in the same order as the SQL table
+ml_feature = ml_feature[
+    [
+        "game_id", "date_id", "season", "attendance", "week", "is_holiday", "is_postseason",
+        "day_monday", "day_tuesday", "day_wednesday", "day_thursday", "day_friday", "day_saturday",
+        "days_since_last_home_game", "split", "win_pct_before_game"
+    ]
+]
+
 
 # Percentage of missing values in each column
 missing_pct_date = dim_date.isna().mean() * 100
 missing_pct_team = dim_team.isna().mean() * 100
 missing_pct_game = fact_game.isna().mean() * 100
 missing_pct_weather = fact_weather.isna().mean() * 100
+missing_pct_ml_feature = ml_feature.isna().mean() * 100
 print("Missing percentage for dim_date:\n", missing_pct_date)
 print("Missing percentage for dim_team:\n", missing_pct_team)
 print("Missing percentage for fact_game:\n", missing_pct_game)
 print("Missing percentage for fact_weather:\n", missing_pct_weather)
+print("Missing percentage for ml_feature:\n", missing_pct_ml_feature)
 
 # Save tables to data/clean
 dim_date.to_csv(CLEAN_DIR / "dim_date.csv", index=False)
 dim_team.to_csv(CLEAN_DIR / "dim_team.csv", index=False)
 fact_game.to_csv(CLEAN_DIR / "fact_game.csv", index=False)
 fact_weather.to_csv(CLEAN_DIR / "fact_weather.csv", index=False)
+ml_feature.to_csv(CLEAN_DIR / "ml_feature.csv", index=False)
