@@ -185,7 +185,7 @@ fact_weather = fact_weather[["game_id", "temp_c", "wind_speed_kmh", "percip_mm",
 ml_feature = home_games.copy()
 ml_feature["date_id"] = pd.to_datetime(ml_feature["date_id"])
 ml_feature = ml_feature.sort_values("date_id").reset_index(drop=True)
-ml_feature["is_holiday"] = dim_date["date_id"].isin(holidays)
+ml_feature["is_holiday"] = dim_date["date_id"].isin(holidays).astype(int)
 
 # Calculate days since the previous home game, including across seasons
 ml_feature["days_since_last_home_game"] = ml_feature["date_id"].diff().dt.days.astype("Int64")
@@ -225,7 +225,11 @@ print("Missing percentage for fact_game:\n", missing_pct_game)
 print("Missing percentage for fact_weather:\n", missing_pct_weather)
 print("Missing percentage for ml_feature:\n", missing_pct_ml_feature)
 
+# Fill missing win_pct_before_game and days since last home game with 0
+ml_feature["win_pct_before_game"] = ml_feature["win_pct_before_game"].fillna(0)
+ml_feature["days_since_last_home_game"] = ml_feature["days_since_last_home_game"].fillna(0)
 # Save tables to data/clean
+
 dim_date.to_csv(CLEAN_DIR / "dim_date.csv", index=False)
 dim_team.to_csv(CLEAN_DIR / "dim_team.csv", index=False)
 fact_game.to_csv(CLEAN_DIR / "fact_game.csv", index=False)

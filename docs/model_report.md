@@ -1,0 +1,1 @@
+![histogram of attendance](\figures\attendance-distribution.png)

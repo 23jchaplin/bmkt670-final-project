@@ -26,6 +26,7 @@ TABLES = (
     "dim_date",
     "fact_game",
     "fact_weather",
+    "ml_feature",
 )
 
 connection = psycopg2.connect(**DB_CONFIG)
