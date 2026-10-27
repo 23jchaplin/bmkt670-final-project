@@ -60,7 +60,7 @@ CREATE TABLE ml_feature (
     day_thursday SMALLINT NOT NULL CHECK (day_thursday IN (0, 1)),
     day_friday SMALLINT NOT NULL CHECK (day_friday IN (0, 1)),
     day_saturday SMALLINT NOT NULL CHECK (day_saturday IN (0, 1)),
-    days_since_last_home_game INTEGER CHECK (days_since_last_home_game > 0),
+    days_since_last_home_game INTEGER CHECK (days_since_last_home_game >= 0),
     split TEXT NOT NULL CHECK (split IN ('train', 'validate', 'test')),
     win_pct_before_game NUMERIC CHECK (win_pct_before_game BETWEEN 0 AND 1),
     CHECK (day_monday + day_tuesday + day_wednesday + day_thursday + day_friday + day_saturday <= 1),

@@ -29,6 +29,15 @@ def read_yearly_files(folder, pattern, required=None):
 
 # Combine yearly files into one dataset per source, then read hourly weather.
 games = read_yearly_files(RAW_DIR, "games_*.csv")
+
+# Keep only Packers games played at Lambeau Field. This excludes neutral-site
+# games such as the London game before stadium is removed from the dataset.
+games["stadium"] = games["stadium"].astype("string").str.strip()
+is_home = games["stadium"].eq("Lambeau Field")
+is_away = games["stadium"].ne("Lambeau Field")
+print(f"Kept {int(is_home.sum())} and excluded {int(is_away.sum())} Packers away games.")
+games = games.loc[is_home].copy()
+
 # Dropping unwanted columns from games
 games = games.drop(columns=['gametime', 'total_line', 'div_game', 'spread_line', 'boxscore_url', 'roof', 'stadium', 'surface'])
 
@@ -133,13 +142,8 @@ wins_before = outcomes.groupby("season")["win_credit"].cumsum() - outcomes["win_
 games_before = outcomes.groupby("season")["completed"].cumsum() - outcomes["completed"]
 outcomes["win_pct_before_game"] = wins_before / games_before.replace(0, float("nan"))
 
-is_home = games["home_team_id"].eq("GB")
-is_away = games["opponent_id"].eq("GB")
-print(f"Kept {int(is_home.sum())} and excluded {int(is_away.sum())} Packers away games.")
-
-#Filter out all games that are not Packers home games.
-games = games[games["home_team_id"] == "GB"]
-home_games = games.loc[is_home].copy()
+# The stadium filter above has already limited this dataset to Packers home games.
+home_games = games.copy()
 outcome_columns = ["season", "date_id", "opponent_id", "Day", "kickoff_utc", "win_pct_before_game"]
 home_games = home_games.merge(
     outcomes[outcome_columns], on=["season", "date_id", "opponent_id"], how="left",
@@ -224,6 +228,10 @@ print("Missing percentage for dim_team:\n", missing_pct_team)
 print("Missing percentage for fact_game:\n", missing_pct_game)
 print("Missing percentage for fact_weather:\n", missing_pct_weather)
 print("Missing percentage for ml_feature:\n", missing_pct_ml_feature)
+
+# Fill missing attendance with actual attendance from the same game: 79,132
+ml_feature["attendance"] = ml_feature["attendance"].fillna(79132)
+fact_game["attendance"] = fact_game["attendance"].fillna(79132)
 
 # Fill missing win_pct_before_game and days since last home game with 0
 ml_feature["win_pct_before_game"] = ml_feature["win_pct_before_game"].fillna(0)
