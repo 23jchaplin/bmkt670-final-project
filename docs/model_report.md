@@ -19,10 +19,16 @@ I used mean absolute error (MAE), which measures how many fans my attendance pre
 
 ### Model Chosen
 
-I choose the Randome Forrest model as it was the only model that had a lower MAE thant he base MAE at 223.86.
-
-Its test score ended up being much higher at 351.2.
+I chose KNN regression because it was the only model that beat the baseline, with a validation MAE of 227.89 fans. 
 
 ### Top Features
+| Feature | Importance | Business meaning |
+| :--- | ---: | :--- |
+
 
 ### limits
+The model uses a small dataset, and attendance varies relatively little across home games. This limits the patterns it can learn and helps explain why predicting the training average was difficult to beat. Its higher test MAE also shows that validation performance does not guarantee the same accuracy in a later season.
+
+The model does not account for ticket prices, opponent popularity. Adding more seasons and these factors could help explain attendance differences. Because the London game was excluded, the model’s results should not be assumed to apply to games at other venues.
+
+Season is also a limited predictor for a random forest because it cannot reliably project a continuing year-to-year trend into future seasons.

@@ -189,6 +189,19 @@ fact_weather = fact_weather[["game_id", "temp_c", "wind_speed_kmh", "percip_mm",
 ml_feature = home_games.copy()
 ml_feature["date_id"] = pd.to_datetime(ml_feature["date_id"])
 ml_feature = ml_feature.sort_values("date_id").reset_index(drop=True)
+ml_feature["kickoff_time"] = ml_feature["kickoff_utc"]
+local_kickoff = ml_feature["kickoff_time"].dt.tz_convert("America/Chicago")
+local_minutes = local_kickoff.dt.hour * 60 + local_kickoff.dt.minute
+kickoff_period = pd.cut(
+    local_minutes,
+    bins=[-1, 15 * 60, 18 * 60, 21 * 60, 24 * 60],
+    labels=["afternoon", "early_evening", "prime_time", "late"],
+)
+for period in kickoff_period.cat.categories:
+    ml_feature[f"kickoff_{period}"] = kickoff_period.eq(period).astype(int)
+ml_feature = ml_feature.merge(
+    fact_weather, on="game_id", how="left", validate="one_to_one"
+)
 ml_feature["is_holiday"] = dim_date["date_id"].isin(holidays).astype(int)
 
 # Calculate days since the previous home game, including across seasons
@@ -210,7 +223,10 @@ ml_feature["is_postseason"] = (ml_feature["game_type"] != "REG").astype(int)
 # Select columns in the same order as the SQL table
 ml_feature = ml_feature[
     [
-        "game_id", "date_id", "season", "attendance", "week", "is_holiday", "is_postseason",
+        "game_id", "date_id", "season", "attendance", "kickoff_time",
+        "kickoff_afternoon", "kickoff_early_evening", "kickoff_prime_time", "kickoff_late",
+        "temp_c", "wind_speed_kmh", "percip_mm", "relative_humidity",
+        "week", "is_holiday", "is_postseason",
         "day_monday", "day_tuesday", "day_wednesday", "day_thursday", "day_friday", "day_saturday",
         "days_since_last_home_game", "split", "win_pct_before_game"
     ]

@@ -28,6 +28,15 @@
 | ml_feature | date_id | Joined | Copy fact_game.date_id. | Date metadata; chronological ordering, excluded from model inputs. |
 | ml_feature | season | Joined | Copy dim_date.season through fact_game.date_id. | Split metadata, excluded from model inputs. |
 | ml_feature | attendance | Joined | Copy fact_game.attendance; retain NULL for missing actual attendance. | Target; never include in model input features. |
+| ml_feature | kickoff_time | Joined | Copy fact_game.kickoff_time, stored as a UTC timestamp. | Schedule metadata, excluded from model inputs. |
+| ml_feature | kickoff_afternoon | Calculated in Python | Convert kickoff_time to America/Chicago time and encode local kickoff times through 3:00 PM as 1, otherwise 0. | Binary kickoff-period feature. |
+| ml_feature | kickoff_early_evening | Calculated in Python | Convert kickoff_time to America/Chicago time and encode local kickoff times after 3:00 PM through 6:00 PM as 1, otherwise 0. | Binary kickoff-period feature. |
+| ml_feature | kickoff_prime_time | Calculated in Python | Convert kickoff_time to America/Chicago time and encode local kickoff times after 6:00 PM through 9:00 PM as 1, otherwise 0. | Binary kickoff-period feature. |
+| ml_feature | kickoff_late | Calculated in Python | Convert kickoff_time to America/Chicago time and encode local kickoff times after 9:00 PM as 1, otherwise 0. | Binary kickoff-period feature. |
+| ml_feature | temp_c | Joined | Copy fact_weather.temp_c matched by game_id at the weather hour closest to kickoff. | Numeric weather feature. |
+| ml_feature | wind_speed_kmh | Joined | Copy fact_weather.wind_speed_kmh matched by game_id at the weather hour closest to kickoff. | Numeric weather feature. |
+| ml_feature | percip_mm | Joined | Copy fact_weather.percip_mm matched by game_id at the weather hour closest to kickoff. | Numeric weather feature. |
+| ml_feature | relative_humidity | Joined | Copy fact_weather.relative_humidity matched by game_id at the weather hour closest to kickoff. | Numeric weather feature. |
 | ml_feature | week | Joined | Copy fact_game.week from the pregame schedule. | Numeric feature. |
 | ml_feature | is_holiday | Calculated in Python | Convert joined dim_date.is_holiday to integer 0 or 1. | Encoded binary calendar feature. |
 | ml_feature | is_postseason | Calculated in Python | Encode game_type REG as 0 and WC, DIV, CON, SB as 1; reject unknown types and exclude preseason. | Encoded binary game-type feature. |

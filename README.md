@@ -33,3 +33,10 @@ Used ChatGPT-6.1 Sol for:
  - Creating the data dictionary: Mapping database fields to their sources and explaining each field’s purpose.
  - Designing the database: Organizing dimension and fact tables and creating sql/schema.sql with data types, primary keys, and foreign keys.
  - Troubleshooting: Interpreting the missing-table error in db_check.py and identifying steps to check the database and create the tables.
+ - Helped write and revise Python code for feature engineering, including days since the previous home game, weekday encoding, and holiday and postseason indicators.
+ - Helped create charts using training data and describe the patterns shown.
+ - Helped adapt regression models to predict attendance and compare their validation scores.
+ - Provided guidance on handling missing attendance and feature values.
+ - Helped write code to evaluate the selected model on test data and identify its most important features.
+ - Helped design a predictions table and code for saving model results to Postgres.
+ - Helped revise project documentation, including the explanation of model selection, results, and limitations.

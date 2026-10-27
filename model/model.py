@@ -119,6 +119,16 @@ results.append({"Model": "Linear Regression", "Validation MAE": validation_mae})
 
 
 # Train a random forest; limit tree size because the dataset is small
+# Remove the additional features for the random forest
+remove_columns = [
+    "kickoff_afternoon", "kickoff_early_evening", "kickoff_prime_time",
+    "kickoff_late", "relative_humidity", "is_postseason", "day_monday", "day_tuesday", 
+    "day_wednesday", "day_thursday", "day_friday", "day_saturday"
+]
+
+x_train_forest = x_train.drop(columns=remove_columns)
+x_validate_forest = x_validate.drop(columns=remove_columns)
+
 random_forest = RandomForestRegressor(
     n_estimators=300,
     max_depth=3,
@@ -126,8 +136,8 @@ random_forest = RandomForestRegressor(
     random_state=my_random_seed
 )
 
-random_forest.fit(x_train, y_train)
-y_pred_validate = random_forest.predict(x_validate)
+random_forest.fit(x_train_forest, y_train)
+y_pred_validate = random_forest.predict(x_validate_forest)
 validation_mae = mean_absolute_error(y_validate, y_pred_validate)
 results.append({"Model": "Random Forest Regression", "Validation MAE": validation_mae})
 
@@ -185,7 +195,7 @@ feature_importance = pd.DataFrame({
     "Importance": random_forest.feature_importances_
 })
 
-top_features = feature_importance.sort_values("Importance", ascending=False).head(5)
+top_features = feature_importance.sort_values("Importance", ascending=False).head(4)
 
-print("\nTop five random forest features")
+print("\nTop four random forest features")
 print(top_features.to_string(index=False, float_format=lambda value: f"{value:.4f}"))
