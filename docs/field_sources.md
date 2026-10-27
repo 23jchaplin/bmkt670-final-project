@@ -49,6 +49,12 @@
 | ml_feature | days_since_last_home_game | Calculated in Python | Day of current game - day of last game | numeric feature |
 | ml_feature | win_pct_before_game | Calculated in Python | takes number of wins before game divided by number of total cames | numeric feature |
 | ml_feature | split | Calculated in Python | Season 2021-2023 = train; 2024 = validate; 2025 = test. Use NFL season, including January/February postseason games. | Time-based partition label, excluded from model inputs. |
+| predictions | game_id | Joined | Copy the prediction unit ID from ml_feature.game_id and fact_game.game_id. | Primary/foreign key identifying the predicted game. |
+| predictions | split | Joined | Copy ml_feature.split: train, validate, or test. | Identifies the evaluation partition; validate and test measure performance on unseen rows. |
+| predictions | actual | Joined | Copy the real attendance target from ml_feature.attendance. | Actual target value used to evaluate the prediction. |
+| predictions | predicted | Calculated in Python | Random forest regression prediction for the corresponding game. | Model output in fans. |
+| predictions | error | Calculated by PostgreSQL | Generated as actual minus predicted. | Prediction residual; validate and test rows show out-of-sample performance. |
+| predictions | model_name | Calculated in Python | Store `random_forest` for the selected model. | Identifies which model generated the prediction. |
 
 Source fields used but not stored:
 - Week 1–Week 18 headings — attendance: supply the week number when reshaping the attendance data.

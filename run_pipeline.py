@@ -10,6 +10,7 @@ steps = [
     "etl/transform.py",         # clean, match keys, reshape, build features
     "etl/load.py",              # empty tables, then load into Postgres
     "etl/quality_checks.py",    # print PASS/FAIL for each check
+    "model/model.py",            # train the model and save predictions
 ]
 
 for step in steps:

@@ -1,8 +1,8 @@
+DROP TABLE IF EXISTS predictions;
 DROP TABLE IF EXISTS fact_game CASCADE;
 DROP TABLE IF EXISTS fact_weather CASCADE;
 DROP TABLE IF EXISTS dim_date CASCADE;
 DROP TABLE IF EXISTS dim_team CASCADE;
-DROP TABLE IF EXISTS predictions;
 DROP TABLE IF EXISTS ml_feature;
 -- One row represents one NFL team.
 CREATE TABLE dim_team (
@@ -49,10 +49,10 @@ CREATE TABLE fact_weather (
 CREATE TABLE predictions (
     game_id TEXT PRIMARY KEY REFERENCES fact_game (game_id),
     split TEXT NOT NULL CHECK (split IN ('train', 'validate', 'test')),
-    actual INTEGER CHECK (actual >= 0),
+    actual INTEGER NOT NULL CHECK (actual >= 0),
     predicted DOUBLE PRECISION NOT NULL,
     error DOUBLE PRECISION GENERATED ALWAYS AS (actual - predicted) STORED,
-    model_name TEXT NOT NULL
+    model_name TEXT NOT NULL CHECK (model_name <> '')
 );
 
 -- One row per Packers home game at Lambeau Field (regular season and playoffs).

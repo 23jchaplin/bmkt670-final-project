@@ -3,6 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import psycopg2
+from psycopg2.extras import execute_values
 from dotenv import load_dotenv
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
@@ -95,7 +96,7 @@ print(f"Baseline validation MAE: {baseline_mae:,.2f} fans")
 print(baseline_results.to_string(index=False))
 
 # Remove IDs, the split label, and the target from the predictors
-exclude_columns = ["game_id", "date_id", "split", "attendance"]
+exclude_columns = ["game_id", "date_id", "kickoff_time", "split", "attendance"]
 
 x_train = train.drop(columns=exclude_columns).apply(pd.to_numeric, errors="raise")
 x_validate = validate.drop(columns=exclude_columns).apply(pd.to_numeric, errors="raise")
@@ -119,15 +120,14 @@ results.append({"Model": "Linear Regression", "Validation MAE": validation_mae})
 
 
 # Train a random forest; limit tree size because the dataset is small
-# Remove the additional features for the random forest
+# Remove the additional features for the random forest as performance was not improved with them
 remove_columns = [
     "kickoff_afternoon", "kickoff_early_evening", "kickoff_prime_time",
-    "kickoff_late", "relative_humidity", "is_postseason", "day_monday", "day_tuesday", 
-    "day_wednesday", "day_thursday", "day_friday", "day_saturday"
+    "kickoff_late", "relative_humidity", "temp_c", "wind_speed_kmh", "percip_mm"
 ]
 
-x_train_forest = x_train.drop(columns=remove_columns)
-x_validate_forest = x_validate.drop(columns=remove_columns)
+x_train_forest = x_train.drop(columns=remove_columns).apply(pd.to_numeric, errors="raise")
+x_validate_forest = x_validate.drop(columns=remove_columns).apply(pd.to_numeric, errors="raise")
 
 random_forest = RandomForestRegressor(
     n_estimators=300,
@@ -172,13 +172,19 @@ print(comparison.to_string(index=False, float_format=lambda value: f"{value:,.2f
 
 
 # Prepare test features using the same columns and order as training
-x_test = test.drop(columns=exclude_columns).apply(pd.to_numeric, errors="raise")
 y_test = test["attendance"].astype(float)
+# Select exactly the features used to train the random forest, in the same order
+x_test_forest = test[x_train_forest.columns].apply(pd.to_numeric, errors="raise")
 
-# Score the selected model on test data once
-y_pred_test = random_forest.predict(x_test)
+# Score the selected random forest on test data once
+y_pred_test = random_forest.predict(x_test_forest)
 test_mae = mean_absolute_error(y_test, y_pred_test)
-forest_mae = comparison.loc[comparison["Model"] == "Random Forest Regression", "Validation MAE"].values[0]
+
+# Retrieve the forest's validation score; validation_mae was overwritten by KNN
+forest_mae = comparison.loc[
+    comparison["Model"] == "Random Forest Regression", "Validation MAE"
+].iloc[0]
+
 # Compare validation and test MAE
 final_scores = pd.DataFrame({
     "Dataset": ["Validate", "Test"],
@@ -188,10 +194,9 @@ final_scores = pd.DataFrame({
 print("\nFinal random forest results")
 print(final_scores.to_string(index=False, float_format=lambda value: f"{value:,.2f}"))
 
-
-# Rank the features used to train the random forest
+# Rank only the features used by the random forest
 feature_importance = pd.DataFrame({
-    "Feature": x_train.columns,
+    "Feature": x_train_forest.columns,
     "Importance": random_forest.feature_importances_
 })
 
@@ -199,3 +204,53 @@ top_features = feature_importance.sort_values("Importance", ascending=False).hea
 
 print("\nTop four random forest features")
 print(top_features.to_string(index=False, float_format=lambda value: f"{value:.4f}"))
+
+
+
+# Persist predictions for all splits so validation and test performance can be
+# evaluated from the database without duplicating rows on reruns.
+prediction_rows = pd.concat(
+    [
+        pd.DataFrame({
+            "game_id": train["game_id"],
+            "split": train["split"],
+            "actual": y_train,
+            "predicted": random_forest.predict(x_train_forest),
+        }),
+        pd.DataFrame({
+            "game_id": validate["game_id"],
+            "split": validate["split"],
+            "actual": y_validate,
+            "predicted": random_forest.predict(x_validate_forest),
+        }),
+        pd.DataFrame({
+            "game_id": test["game_id"],
+            "split": test["split"],
+            "actual": y_test,
+            "predicted": y_pred_test,
+        }),
+    ],
+    ignore_index=True,
+)
+prediction_rows["model_name"] = "random_forest"
+
+prediction_connection = psycopg2.connect(**DB_CONFIG)
+prediction_cursor = prediction_connection.cursor()
+prediction_cursor.execute("TRUNCATE TABLE predictions;")
+execute_values(
+    prediction_cursor,
+    """
+    INSERT INTO predictions (game_id, split, actual, predicted, model_name)
+    VALUES %s
+    """,
+    [
+        tuple(row)
+        for row in prediction_rows[
+            ["game_id", "split", "actual", "predicted", "model_name"]
+        ].itertuples(index=False, name=None)
+    ],
+)
+prediction_connection.commit()
+prediction_cursor.close()
+prediction_connection.close()
+print(f"\nSaved {len(prediction_rows)} random forest predictions.")
