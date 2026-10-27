@@ -23,6 +23,8 @@ One row in my ML feature table = one game
 3. Pull the data: run each script in etl/ (e.g., python etl/extract_games.py)  
 4. Build the database: run sql/schema.sql in pgAdmin or psql
 5. Confirm it worked: python db_check.py (should print all table names)
+6. Run transform.py, this filters down home games based on the stadium being greenbays lambaeu field.
+    It also deals with missing attendance, days_since last home game and win_pct_before-game
 
 ## AI Usage
 

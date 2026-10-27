@@ -8,8 +8,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
-from sklearn.neural_network import MLPRegressor
-from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestRegressor
 
 FIGURE_DIR = Path("docs/figures")
 FIGURE_DIR.mkdir(parents=True, exist_ok=True)
@@ -27,9 +26,10 @@ connection = psycopg2.connect(**DB_CONFIG)
 # Use the project's existing database settings in .env.
 
 # Read the saved split assignments from Postgres.
-with connection.cursor() as cur:
-    cur.execute("SELECT * FROM ml_feature ORDER BY date_id, game_id;")
-    df = pd.DataFrame(cur.fetchall(), columns=[column[0] for column in cur.description])
+cur = connection.cursor()
+
+cur.execute("SELECT * FROM ml_feature ORDER BY date_id, game_id;")
+df = pd.DataFrame(cur.fetchall(), columns=[column[0] for column in cur.description])
 connection.close()
 
 train = df[df["split"] == "train"]
@@ -39,13 +39,6 @@ test = df[df["split"] == "test"]
 print(f"Train rows: {len(train)}")
 print(f"Validate rows: {len(validate)}")
 print(f"Test rows: {len(test)}")
-
-# Convert Postgres numeric values to a numeric pandas type
-train = train.copy()
-train["win_pct_before_game"] = pd.to_numeric(train["win_pct_before_game"])
-
-# Exclude the London game because it was played outside Lambeau Field
-train = train[train["game_id"] != "2022_05_NYG_GB"].copy()
 
 # Chart 1: Distribution of attendance
 plt.figure(figsize=(8, 5))
@@ -124,30 +117,26 @@ y_pred_validate = linear_regression.predict(x_validate)
 validation_mae = mean_absolute_error(y_validate, y_pred_validate)
 results.append({"Model": "Linear Regression", "Validation MAE": validation_mae})
 
+
+# Train a random forest; limit tree size because the dataset is small
+random_forest = RandomForestRegressor(
+    n_estimators=300,
+    max_depth=3,
+    min_samples_leaf=3,
+    random_state=my_random_seed
+)
+
+random_forest.fit(x_train, y_train)
+y_pred_validate = random_forest.predict(x_validate)
+validation_mae = mean_absolute_error(y_validate, y_pred_validate)
+results.append({"Model": "Random Forest Regression", "Validation MAE": validation_mae})
+
 # Scale features
 standard_scaler = StandardScaler()
 standard_scaler.fit(x_train)
 x_train_scaled = standard_scaler.transform(x_train)
 x_validate_scaled = standard_scaler.transform(x_validate)
 
-#Create Neural Network and train it with hyperparameter tuning
-mlp_clf = MLPRegressor(random_state=my_random_seed, max_iter=5000)
-
-parameter_space = {
-    "hidden_layer_sizes": [(50, 50, 50), (50, 100, 50), (100,)],
-    "activation": ["tanh", "relu"],
-    "solver": ["sgd", "adam"],
-    "alpha": [0.0001, 0.05],
-    "learning_rate": ["constant", "adaptive"]
-}
-
-clf = GridSearchCV(mlp_clf, parameter_space, cv=3, n_jobs=4)
-clf.fit(x_train_scaled, y_train)
-
-# Predict
-y_pred_test = clf.predict(x_validate_scaled)
-validation_mae = mean_absolute_error(y_validate, y_pred_test)
-results.append({"Model": "MLP regression", "Validation MAE": validation_mae})
 
 # Create a KNN model
 knn = KNeighborsRegressor(
@@ -166,8 +155,37 @@ validation_mae = mean_absolute_error(y_validate, predictions)
 results.append({"Model": "KNN regression", "Validation MAE": validation_mae})
 
 
-
 # Display one comparison table, keeping the baseline first
 comparison = pd.DataFrame(results)
-print("\nValidation results — MAE in fans; lower is better:")
+print("\nValidation results")
 print(comparison.to_string(index=False, float_format=lambda value: f"{value:,.2f}"))
+
+
+# Prepare test features using the same columns and order as training
+x_test = test.drop(columns=exclude_columns).apply(pd.to_numeric, errors="raise")
+y_test = test["attendance"].astype(float)
+
+# Score the selected model on test data once
+y_pred_test = random_forest.predict(x_test)
+test_mae = mean_absolute_error(y_test, y_pred_test)
+forest_mae = comparison.loc[comparison["Model"] == "Random Forest Regression", "Validation MAE"].values[0]
+# Compare validation and test MAE
+final_scores = pd.DataFrame({
+    "Dataset": ["Validate", "Test"],
+    "Random Forest MAE": [forest_mae, test_mae]
+})
+
+print("\nFinal random forest results")
+print(final_scores.to_string(index=False, float_format=lambda value: f"{value:,.2f}"))
+
+
+# Rank the features used to train the random forest
+feature_importance = pd.DataFrame({
+    "Feature": x_train.columns,
+    "Importance": random_forest.feature_importances_
+})
+
+top_features = feature_importance.sort_values("Importance", ascending=False).head(5)
+
+print("\nTop five random forest features")
+print(top_features.to_string(index=False, float_format=lambda value: f"{value:.4f}"))
