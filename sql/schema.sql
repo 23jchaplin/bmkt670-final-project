@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS ai_summaries;
 DROP TABLE IF EXISTS predictions;
 DROP TABLE IF EXISTS fact_game CASCADE;
 DROP TABLE IF EXISTS fact_weather CASCADE;
@@ -53,6 +54,13 @@ CREATE TABLE predictions (
     predicted DOUBLE PRECISION NOT NULL,
     error DOUBLE PRECISION GENERATED ALWAYS AS (actual - predicted) STORED,
     model_name TEXT NOT NULL CHECK (model_name <> '')
+);
+
+-- One AI-generated plain-language summary per predicted game.
+CREATE TABLE ai_summaries (
+    game_id TEXT PRIMARY KEY REFERENCES predictions (game_id),
+    summary TEXT NOT NULL,
+    written_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- One row per Packers home game at Lambeau Field (regular season and playoffs).

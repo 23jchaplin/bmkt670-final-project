@@ -30,7 +30,7 @@ I chose random forest regression because it had the lowest validation MAE and be
 | Season | 3.97% | The year may capture differences in attendance patterns across seasons. |
 
 
-### limits
+### Limits
 The model uses a small dataset, and attendance varies relatively little across home games. This limits the patterns it can learn and helps explain why predicting the training average was difficult to beat. Its higher test MAE also shows that validation performance does not guarantee the same accuracy in a later season.
 
 The model does not account for ticket prices, or opponent popularity. Adding more seasons and these factors could help explain attendance differences. 

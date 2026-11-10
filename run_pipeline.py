@@ -11,6 +11,7 @@ steps = [
     "etl/load.py",              # empty tables, then load into Postgres
     "etl/quality_checks.py",    # print PASS/FAIL for each check
     "model/model.py",            # train the model and save predictions
+    "ai/generate_summaries.py",  # generate summaries for test predictions
 ]
 
 for step in steps:
