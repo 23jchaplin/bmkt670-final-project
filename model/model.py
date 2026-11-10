@@ -10,6 +10,9 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
+from pathlib import Path
+import joblib
+import sklearn
 
 FIGURE_DIR = Path("docs/figures")
 FIGURE_DIR.mkdir(parents=True, exist_ok=True)
@@ -236,7 +239,7 @@ prediction_rows["model_name"] = "random_forest"
 
 prediction_connection = psycopg2.connect(**DB_CONFIG)
 prediction_cursor = prediction_connection.cursor()
-prediction_cursor.execute("TRUNCATE TABLE predictions;")
+prediction_cursor.execute("TRUNCATE TABLE ai_summaries, predictions;")
 execute_values(
     prediction_cursor,
     """
@@ -254,3 +257,27 @@ prediction_connection.commit()
 prediction_cursor.close()
 prediction_connection.close()
 print(f"\nSaved {len(prediction_rows)} random forest predictions.")
+
+
+
+# Persist the trained random forest model to a file
+model_path = (
+    Path(__file__).resolve().parents[1]
+    / "model"
+    / "attendance_model.joblib"
+)
+
+joblib.dump(
+    {
+        "model": random_forest,
+        "features": x_train_forest.columns.tolist(),
+        "dtypes": x_train_forest.dtypes.astype(str).to_dict(),
+        "test_mae": float(test_mae),
+        "sklearn_version": sklearn.__version__,
+    },
+    model_path,
+)
+
+print(f"\nSaved model to: {model_path}")
+print(f"Training features: {x_train_forest.columns.tolist()}")
+print(f"scikit-learn version: {sklearn.__version__}")

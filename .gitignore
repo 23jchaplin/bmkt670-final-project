@@ -3,3 +3,4 @@
 data/raw/
 data/clean/
 .streamlit/secrets.toml
+model/attendance_model.joblib
