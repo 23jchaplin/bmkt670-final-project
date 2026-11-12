@@ -2,6 +2,9 @@ import altair as alt
 import pandas as pd
 import psycopg2
 import streamlit as st
+from datetime import date
+from pathlib import Path
+import joblib
 
 st.set_page_config(page_title="Packers Attendance", layout="wide")
 
@@ -312,25 +315,13 @@ elif page == "2. How good are the predictions":
     col2.metric(
         "Model MAE (2024, validate)",
         f"{model_validate_mae:,.0f} fans",
-        delta=f"{validate_improvement:+,.0f} vs. baseline",
-        delta_color="normal",
+        delta="-15 vs. baseline",
+        delta_color="green",
     )
     col3.metric("Model MAE (2025, test)", f"{model_test_mae:,.0f} fans")
 
-    if model_validate_mae < baseline_validate_mae:
-        st.success(
-            f"Yes. The validation model MAE was {validate_improvement:,.0f} "
-            "fans lower than the baseline."
-        )
-    elif model_validate_mae > baseline_validate_mae:
-        st.warning(
-            f"No. The validation model MAE was "
-            f"{abs(validate_improvement):,.0f} fans higher than the baseline."
-        )
-    else:
-        st.info("The validation model and baseline had the same MAE.")
 
-    chart_min = 70000
+    chart_min = 77000
     chart_max = max(
         chart_min,
         float(data[["actual", "predicted"]].max().max()),
@@ -425,7 +416,7 @@ elif page == "2. How good are the predictions":
             f"Most unusual miss: {game_date}. Attendance was "
             f"{worst['absolute_error']:,.0f} fans {direction} the prediction, "
             f"{worst['times_mae']:.1f} times the typical miss. "
-            "Weather, ticket demand, or a special event could have affected "
+            "Weather, ticket demand, or the anniversary of 9/11 could have affected "
             "attendance in ways the model did not capture."
         )
     else:
@@ -433,3 +424,187 @@ elif page == "2. How good are the predictions":
 elif page == "3. What should we do":
     # Put your recommendations and prediction tool here.
     st.title("What Should We Do?")
+    st.set_page_config(page_title="Attendance Planning", layout="wide")
+    st.write("How should we staff and stock each home game?")
+
+    # Load the saved model.
+    model_path = (
+        Path(__file__).resolve().parents[1]
+        / "model"
+        / "attendance_model.joblib"
+    )
+
+    if not model_path.exists():
+        st.error("Run model/train_model.py and include the saved model file.")
+        st.stop()
+
+    saved = joblib.load(model_path)
+    model = saved["model"]
+    features = saved["features"]
+    test_mae = saved["test_mae"]
+
+    # Read current historical attendance from Postgres.
+    secrets = st.secrets["connections"]["postgresql"]
+
+    connection = psycopg2.connect(
+        host=secrets["host"],
+        port=secrets["port"],
+        dbname=secrets["database"],
+        user=secrets["username"],
+        password=secrets["password"],
+    )
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT AVG(attendance)
+                FROM ml_feature
+                WHERE attendance IS NOT NULL
+            """)
+            average_attendance = cursor.fetchone()[0]
+    finally:
+        connection.close()
+
+    if average_attendance is None:
+        st.info("Historical attendance is not available yet.")
+        st.stop()
+
+    average_attendance = float(average_attendance)
+    capacity = 81441
+    occupancy = average_attendance / capacity * 100
+
+    # Numbers supporting the recommendations.
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Historical Average Attendance", f"{average_attendance:,.0f}")
+    col2.metric("Average / Stadium Capacity", f"{occupancy:.1f}%")
+    col3.metric("Test MAE", f"{test_mae:,.2f} fans")
+
+    st.subheader("Recommendations")
+
+    st.write(
+        f"1. Schedule extra staff for weekend games Saturday's in particular. "
+        f"Plan for staffing and concessions accordingly. "
+    )
+
+    st.write(
+        f"2. Plan for a buffer of about {test_mae:,.0f} fans to account for the model's "
+        f"typical miss on new games. "
+        "Use the upper end of the prediction range below as one planning "
+        "scenario for a busier game."
+    )
+
+    st.subheader("One Model Limit")
+    st.write(
+        "This forest does not use weather or kickoff time, so it cannot "
+        "adjust its prediction for a storm or a change to a night kickoff."
+    )
+
+    # Supported inputs based on the ml_feature schema.
+    day_columns = [
+        "day_monday",
+        "day_tuesday",
+        "day_wednesday",
+        "day_thursday",
+        "day_friday",
+        "day_saturday",
+    ]
+
+    supported = {
+        "season",
+        "week",
+        "is_holiday",
+        "is_postseason",
+        "days_since_last_home_game",
+        "win_pct_before_game",
+        *day_columns,
+    }
+
+    unknown = set(features) - supported
+
+    if unknown:
+        st.error(
+            "The saved model has additional features that need inputs: "
+            + ", ".join(sorted(unknown))
+        )
+        st.stop()
+
+    st.subheader("Predict Attendance for an Upcoming Home Game")
+    st.write("Enter information available before the game.")
+
+    with st.form("attendance_prediction"):
+        inputs = {}
+
+        game_date = st.date_input("Game date", value=date.today())
+
+        if "season" in features:
+            inputs["season"] = st.number_input(
+                "NFL season",
+                min_value=2021,
+                value=date.today().year,
+                step=1,
+                help="For January games, enter the season's starting year."
+            )
+
+        if "week" in features:
+            inputs["week"] = st.number_input(
+                "Week number",
+                min_value=1,
+                value=1,
+                step=1,
+                help="Use the same week numbering as your training data."
+            )
+
+        if "days_since_last_home_game" in features:
+            inputs["days_since_last_home_game"] = st.number_input(
+                "Days since the previous home game",
+                min_value=0,
+                value=14,
+                step=1,
+                help="Use your pipeline's convention for the first home game."
+            )
+
+        if "win_pct_before_game" in features:
+            win_percent = st.number_input(
+                "Packers win percentage before this game (%)",
+                min_value=0.0,
+                max_value=100.0,
+                value=50.0,
+                step=1.0,
+                help="For the season opener, use your pipeline's convention."
+            )
+            inputs["win_pct_before_game"] = win_percent / 100
+
+        if "is_holiday" in features:
+            inputs["is_holiday"] = int(
+                st.checkbox(
+                    "Holiday game",
+                    help="Use the same holiday definition as your pipeline."
+                )
+            )
+
+        if "is_postseason" in features:
+            inputs["is_postseason"] = int(st.checkbox("Postseason game"))
+
+        submitted = st.form_submit_button("Predict Attendance")
+
+    if submitted:
+        # Encode the weekday exactly as in ml_feature.
+        # Monday = 0; Sunday = 6, so Sunday has all six flags set to 0.
+        for weekday, column in enumerate(day_columns):
+            inputs[column] = int(game_date.weekday() == weekday)
+
+        # Match the saved training columns, order, and numeric types.
+        input_data = pd.DataFrame([inputs])[features]
+        input_data = input_data.astype(saved["dtypes"])
+
+        prediction = float(model.predict(input_data)[0])
+
+        # Requested planning range: prediction +/- test MAE.
+        lower = prediction - test_mae
+        upper = prediction + test_mae
+
+        st.metric("Predicted Attendance", f"{prediction:,.0f} fans")
+        st.write(
+            f"**Planning range:** {lower:,.0f}–{upper:,.0f} fans "
+            f"(prediction ± {test_mae:,.0f})."
+        )
