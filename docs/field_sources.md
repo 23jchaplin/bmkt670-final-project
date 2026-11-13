@@ -56,7 +56,7 @@
 | predictions | error | Calculated by PostgreSQL | Generated as actual minus predicted. | Prediction residual; validate and test rows show out-of-sample performance. |
 | predictions | model_name | Calculated in Python | Store `random_forest` for the selected model. | Identifies which model generated the prediction. |
 | ai_summaries | game_id | Joined | Copy the prediction unit ID from predictions.game_id. | Primary/foreign key identifying the summarized game. |
-| ai_summaries | summary | OpenAI API | Generate one 2–3 sentence plain-language summary from the test prediction, actual result, error, and selected ML features. | Manager-readable attendance prediction summary. |
+| ai_summaries | summary | OpenAI API | Generate a two-sentence manager-facing narrative from the test prediction, actual result, error direction, opponent, and selected ML features. The prompt asks the model to rank the strongest signals and explain them cautiously rather than list raw feature values. | Manager-readable attendance prediction summary. |
 | ai_summaries | written_at | Created by PostgreSQL | Set to the current timestamp when the summary is inserted or updated. | Records when the summary was written. |
 
 Source fields used but not stored:

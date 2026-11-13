@@ -473,17 +473,12 @@ elif page == "3. What should we do":
     capacity = 81441
     occupancy = average_attendance / capacity * 100
 
-    # Numbers supporting the recommendations.
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Historical Average Attendance", f"{average_attendance:,.0f}")
-    col2.metric("Average / Stadium Capacity", f"{occupancy:.1f}%")
-    col3.metric("Test MAE", f"{test_mae:,.2f} fans")
 
     st.subheader("Recommendations")
 
     st.write(
-        f"1. Schedule extra staff for weekend games Saturday's in particular. "
-        f"Plan for staffing and concessions accordingly. "
+        f"1. Schedule extra staff and concessionsfor weekend games Saturday's in particular. "
+        f"Saturday and Sunday games average 500 more people than Monday or Thursday games (page 1, all seasons). "
     )
 
     st.write(
