@@ -476,22 +476,25 @@ elif page == "3. What should we do":
 
     st.subheader("Recommendations")
 
-    st.write(
-        f"1. Schedule extra staff and concessionsfor weekend games Saturday's in particular. "
-        f"Saturday and Sunday games average 500 more people than Monday or Thursday games (page 1, all seasons). "
+    st.success(
+        "Schedule extra staff and concessions for weekend games, especially Saturdays. "
+        "Saturday and Sunday games average 500 more people than Monday or Thursday games "
+        "(page 1, all seasons).",
+        title="Recommendation 1",
     )
 
-    st.write(
-        f"2. Plan for a buffer of about {test_mae:,.0f} fans to account for the model's "
-        f"typical miss on new games. "
-        "Use the upper end of the prediction range below as one planning "
-        "scenario for a busier game."
+    st.success(
+        f"Plan for a buffer of about {test_mae:,.0f} fans to account for the model's "
+        "typical miss on new games. Use the upper end of the prediction range below "
+        "as one planning scenario for a busier game.",
+        title="Recommendation 2",
     )
 
-    st.subheader("One Model Limit")
-    st.write(
-        "This forest does not use weather or kickoff time, so it cannot "
-        "adjust its prediction for a storm or a change to a night kickoff."
+    st.subheader("One model limit")
+    st.warning(
+        "This random forest model does not use weather or kickoff time, so it cannot "
+        "adjust its prediction for a storm or kickoff time.",
+        title="Planning limitation",
     )
 
     # Supported inputs based on the ml_feature schema.
@@ -603,3 +606,29 @@ elif page == "3. What should we do":
             f"**Planning range:** {lower:,.0f}–{upper:,.0f} fans "
             f"(prediction ± {test_mae:,.0f})."
         )
+
+    st.subheader("AI-Generated Game Summaries")
+    st.write(" Written by OpenAI from each game's facts.")
+    selected_game_ids = [
+        "2025_01_DET_GB",
+        "2025_10_PHI_GB",
+        "2025_06_CIN_GB",
+    ]
+    summaries = read_query(
+        """
+            SELECT game_id, summary
+            FROM ai_summaries
+            WHERE game_id = ANY(%s)
+        """,
+        (selected_game_ids,),
+    )
+    summaries_by_game = summaries.set_index("game_id")["summary"].to_dict()
+
+    for game_id in selected_game_ids:
+        with st.container(border=True):
+            st.markdown(f"**{game_id}**")
+            summary = summaries_by_game.get(game_id)
+            if summary is None:
+                st.warning(f"No AI summary is available for {game_id}.")
+            else:
+                st.write(summary)

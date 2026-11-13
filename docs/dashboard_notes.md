@@ -16,7 +16,7 @@ Translate values into natural language: do not mention feature names, binary fla
 
 | Game | AI summary | What I found |
 | :--- | ---: | :--- |
-| 2025_01_DET_GB | The model predicted 77,935 fans for the Sunday game against the Detroit Lions, 696 above the actual attendance of 77,239. The long 245-day gap since the prior home game likely helped support the strong attendance outlook, despite the Packers entering with no wins. |	Attendance figures and the 696-fan overprediction match. Sunday and season-opener details also match. |
+| 2025_01_DET_GB | The model predicted 77,935 fans for the Sunday game against the Detroit Lions, 696 above the actual attendance of 77,239. The long 245-day gap since the prior home game likely helped support the strong attendance outlook, despite the Packers entering with no wins. | Attendance figures and the 696-fan overprediction match. Sunday and season-opener details also match. Both predicted and actual are below the average attendance, so I'm not sure if it should be considered a stroung outlook. |
 | 2025_10_PHI_GB | Attendance was predicted at 78,047 fans, just 207 below the actual crowd of 78,254. The Monday matchup against the Philadelphia Eagles, eight days after the prior home game, and the Packers’ 69% win rate likely supported the strong turnout. |	Figures and the 207-fan underprediction match, as does Monday. |
 | 2025_06_CIN_GB | Attendance was predicted at about 78,232 fans, just 45 below the actual crowd of 78,277. The Sunday matchup against the Cincinnati Bengals, a 31-day gap since the prior home game, and the Packers’ 62% win rate likely supported the strong turnout. | Attendance figures, the 45-fan underprediction, Sunday, and the gap match. The win rate should be reported as 62.5%. |
 
