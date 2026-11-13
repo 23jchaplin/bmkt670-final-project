@@ -26,6 +26,7 @@ One row in my ML feature table = one game
 6. Run your loading script to load the cleaned tables into Postgres.
 7. Confirm it worked: python db_check.py (should print all table names)
 8. Run the modeling script: model/model.py. This script reads ml_feature from Postgres, separates the data using the existing splits, and excludes rows with missing attendance from model fitting and evaluation. It creates training-data charts in docs/figures/, calculates the baseline, compares regression models using validation MAE, evaluates the selected random forest on the test data, and reports its top features. Then saves it to sql table predictions.
+9. Run python run_pipeline before the dashboard, so the saved model exists. Create the dashboard by running python -m streamlit run dashboard/app.py
 
 ## AI Usage
 
