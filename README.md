@@ -42,3 +42,4 @@ Used ChatGPT-6.1 Sol for:
  - Helped write code to evaluate the selected model on test data and identify its most important features.
  - Helped design a predictions table and code for saving model results to Postgres.
  - Helped revise project documentation, including the explanation of model selection, results, and limitations.
+- Helped write code for the app design and ai_summaries
