@@ -23,4 +23,4 @@ Translate values into natural language: do not mention feature names, binary fla
 **Estimated cost per run:** Eight summaries at approximately 300 tokens each total 2,400 tokens, plus any prompt tokens excluded from that estimate. The preliminary estimate is under $0.01 per run, but this requires confirmation using the selected model’s input and output prices.
 
 ### One Thing I’d Add With More Time
-I would add a prediction range based on observed model errors. Showing a likely attendance range alongside the point estimate would help the operations manager plan staffing while accounting for uncertainty.
+I would add a prediction range based on observed model errors. Showing a likely attendance range alongside the point estimate would help the operations manager plan staffing while accounting for uncertainty. I would also test whether adding the average attendance from the previous three home games and ticket prices available before kickoff improves the model’s predictions. 

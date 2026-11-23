@@ -27,7 +27,7 @@ def read_yearly_files(folder, pattern, required=None):
     return pd.concat(frames, ignore_index=True)
 
 
-# Combine yearly files into one dataset per source, then read hourly weather.
+# Combine yearly files into one dataset per source
 games = read_yearly_files(RAW_DIR, "games_*.csv")
 
 # Keep only Packers games played at Lambeau Field. This excludes neutral-site

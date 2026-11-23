@@ -13,7 +13,7 @@ One row in my ML feature table = one game
 | Source | What it provides | Access |
 | --- | --- | --- |
 | [2021 - 2025 NFL Attendance Data - Pro-Football-Reference.com](https://www.pro-football-reference.com/years/2025/attendance.htm) | 2025 NFL attendance | Downloaded to CSV 9/22 by clicking the "Share & Export" dropdown and selecting "Get table as CSV" |
-| [NFL Stadiums Database](https://www.worldplacesexplained.com/data/nfl-stadiums-database) | Stadium, team, city, capacity, surface | Downloaded to CSV 9/22 by selecting the "Download CSV" button |
+| [Meteostat Python Library](https://dev.meteostat.net/python) | Stadium, team, city, capacity, surface | Installed as python package |
 | [NFL Data API](https://nfldata.org/) | Date, temp, wind, stadium, roof type, teams, and scores | Free API |
 | [2021 - 2025 Outcomes - Pro-Football-Reference.com](https://www.pro-football-reference.com/teeams/gnb/2025.htm) | Day, date and time, outcome of packers games | Downloaded to CSV 9/22 by clicking the "Share & Export" dropdown and selecting "Get table as CSV" Removed Bye week|
 
