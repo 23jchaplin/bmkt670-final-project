@@ -5,7 +5,7 @@ from pathlib import Path
 # Scripts to run, in order
 steps = [
     "etl/check_pfr_files.py",   # extract: check the hand-downloaded PFR files
-    "etl/extract_games.py",     # extract: games
+    "etl/check_games.py",     # extract: games, change to extract_games.py to try to run the API
     "etl/extract_weather.py",   # extract: weather 
     "etl/transform.py",         # clean, match keys, reshape, build features
     "etl/load.py",              # empty tables, then load into Postgres

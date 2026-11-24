@@ -4,3 +4,7 @@ data/raw/
 data/clean/
 .streamlit/secrets.toml
 model/attendance_model.joblib
+
+# Preserve folder structure
+!data/raw/.gitkeep
+!data/clean/.gitkeep

@@ -19,14 +19,15 @@ One row in my ML feature table = one game
 
 ## How to Run
 1. Create and activate a virtual environment
-2. Install packages: pip install -r requirements.txt
-3. Pull the data: run each script in etl/ (e.g., python etl/extract_games.py)  
+2. Install packages: pip install -r requirements.txt and set up .env file
+3. Pull the data: run each extract and check script in etl/ (e.g., python etl/extract_games.py)  
 4. Build the database: run sql/schema.sql in pgAdmin or psql
 5. Run transform.py to combine and align the source datasets, select Packers home games played at Lambeau Field, and prepare the cleaned tables. It preserves unknown attendance as missing, calculates days_since_last_home_game and win_pct_before_game, encodes calendar and game-type features, and assigns the training, validation, and test splits.
-6. Run your loading script to load the cleaned tables into Postgres.
+6. Run your loading script (load.py) to load the cleaned tables into Postgres.
 7. Confirm it worked: python db_check.py (should print all table names)
 8. Run the modeling script: model/model.py. This script reads ml_feature from Postgres, separates the data using the existing splits, and excludes rows with missing attendance from model fitting and evaluation. It creates training-data charts in docs/figures/, calculates the baseline, compares regression models using validation MAE, evaluates the selected random forest on the test data, and reports its top features. Then saves it to sql table predictions.
-9. Run python run_pipeline before the dashboard, so the saved model exists. Create the dashboard by running python -m streamlit run dashboard/app.py
+9. Running python run_pipeline.py will execute steps 3 through 9. 
+10. Set up streamlit\secrets.toml file. Create the dashboard by running python -m streamlit run dashboard/app.py
 
 ## AI Usage
 
